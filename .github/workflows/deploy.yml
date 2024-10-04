@@ -1,0 +1,40 @@
+name: Deploy Hexo to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Install Hexo CLI
+        run: npm install -g hexo-cli
+
+      - name: Generate Static Files
+        run: hexo generate
+
+      - name: Deploy to GitHub Pages
+        run: npx hexo deploy
+
+      - name: Trigger Playwright Workflow
+        env:
+          PAT: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          curl -X POST \
+          -H "Authorization: token $PAT" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/dp787/playwrightwebsite/dispatches \
+          -d '{"event_type": "trigger-playwright-tests"}'
